@@ -369,8 +369,6 @@ function buscarVentasDetallado(){
         var sumaPorFila2 = [];
         var total = 0;
         var total2 = 0;
-        var incremento = 0;
-        var incremento1 = 0;
         for(var i = 0; i < resp.length; i++) {     
           var desPrecioBruto = new Intl.NumberFormat('de-DE').format(parseFloat(resp[i]["basebruta"]).toFixed(2));
           var desPrecioBrutoUSD = new Intl.NumberFormat('de-DE').format(parseFloat(resp[i]["basebrutausd"]).toFixed(2));
@@ -382,11 +380,9 @@ function buscarVentasDetallado(){
           var desMonto_IVAUSD = new Intl.NumberFormat('de-DE').format(parseFloat(resp[i]["ivausd"]).toFixed(2));
           var desMonto_Total = new Intl.NumberFormat('de-DE').format(parseFloat(resp[i]["totaldocumento"]).toFixed(2));
           var desMonto_USD = new Intl.NumberFormat('de-DE').format(parseFloat(resp[i]["totaldocumentousd"]).toFixed(2));
+          var Monto_Total = resp[i]["totaldocumento"];
+          var Monto_TotalUSD = resp[i]["totaldocumentousd"];
           var parent = table.row.add(['<td><div class="btn-group"><button class="btn btn-success btn-xs toggleChild"><i class="fa fa-plus-circle"></i></button></div</td>',resp[i]["idsucursalsap"],resp[i]["nrofactura"],resp[i]["nronotacredito"],resp[i]["nrofacturaafectada"],resp[i]["fecha"],resp[i]["cicliente"],resp[i]["nombrecliente"],resp[i]["caja"],desPrecioBruto+' Bs',desPrecioBrutoUSD+' $',desMonto_Descuentos+' Bs',desMonto_DescuentosUSD+' $',desPrecioNeto+' Bs',desPrecioNetoUSD+' $',desMonto_IVA+' Bs',desMonto_IVAUSD+' $',desMonto_Total+' Bs',desMonto_USD+' $']).draw().node();
-          sumaPorFila.push(desMonto_USD);
-          sumaPorFila2.push(desMonto_Total);
-          total += desMonto_USD;
-          total2 += desMonto_Total;
           var detalle = resp[i]["Detalle"];   
           var formaPago = resp[i]["FormaPago"];  
           var cambios = resp[i]["Cambios"];  
@@ -416,16 +412,22 @@ function buscarVentasDetallado(){
             }
             table.row(parent).child($('<div>').append(childTable1, childTable2, childTable3)).hide();
           }
+          sumaPorFila.push(Monto_TotalUSD);
+          sumaPorFila2.push(Monto_Total);
+          total += Monto_TotalUSD;
+          total2 += Monto_Total;
         }
         progressBar.style.width = '75%';
-        var sum = table.column(17).data().reduce(function (a, b) {
-          return parseFloat(a) + parseFloat(b);
+        var column = table.column(17);
+        var sum = column.data().reduce(function(a,b) {
+            return parseFloat(a) + parseFloat(b);
         }, 0);
-        var sum2 = table.column(18).data().reduce(function (c, d) {
-          return parseFloat(c) + parseFloat(d);
+        var column2 = table.column(18);
+        var sum2 = column2.data().reduce(function(c,d) {
+            return parseFloat(c) + parseFloat(d);
         }, 0);
-        var totalVta = new Intl.NumberFormat('de-DE').format(parseFloat(sum).toFixed(2));
-        var totalVtaUsd = new Intl.NumberFormat('de-DE').format(parseFloat(sum2).toFixed(2));
+        var totalVta = new Intl.NumberFormat('de-DE').format(parseFloat(total2).toFixed(2));
+        var totalVtaUsd = new Intl.NumberFormat('de-DE').format(parseFloat(total).toFixed(2));
         $('#totalVta3').val(totalVta + ' Bs');
         $('#totalVtaUsd3').val(totalVtaUsd + ' $');
         $('#totalnc3').html(resp[0]['totalnc']);
