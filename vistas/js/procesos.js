@@ -418,16 +418,14 @@ function buscarVentasDetallado(){
           }
         }
         progressBar.style.width = '75%';
-        var column = table.column(17);
-        var sum = column.data().reduce(function(a,b) {
-            return parseFloat(a) + parseFloat(b);
+        var sum = table.column(17).data().reduce(function (a, b) {
+          return parseFloat(a) + parseFloat(b);
         }, 0);
-        var column2 = table.column(18);
-        var sum2 = column2.data().reduce(function(c,d) {
-            return parseFloat(c) + parseFloat(d);
+        var sum2 = table.column(18).data().reduce(function (c, d) {
+          return parseFloat(c) + parseFloat(d);
         }, 0);
-        var totalVta = new Intl.NumberFormat('de-DE').format(parseFloat(total2).toFixed(2));
-        var totalVtaUsd = new Intl.NumberFormat('de-DE').format(parseFloat(total).toFixed(2));
+        var totalVta = new Intl.NumberFormat('de-DE').format(parseFloat(sum).toFixed(2));
+        var totalVtaUsd = new Intl.NumberFormat('de-DE').format(parseFloat(sum2).toFixed(2));
         $('#totalVta3').val(totalVta + ' Bs');
         $('#totalVtaUsd3').val(totalVtaUsd + ' $');
         $('#totalnc3').html(resp[0]['totalnc']);
