@@ -23,25 +23,24 @@
 					<select class="custom-select col-6" id="seleccionarSucursal2" name="seleccionarSucursal2" required>
 						<option selected="">Seleccionar...</option>
 						<?php
-              $sucursales = ControladorMaestros::ctrMostrarSucursales();
-              foreach ($sucursales as $key => $value) {
-                echo '<option data-id="'.$value["IdSucursal"].'" data-color="'.$value["IpServidor"].'" value="'.$value["Servidor"].'">'.$value["Sucursal"].'</option>';
-              }                           
+							if ($_SESSION["sucursal"] == 0) {
+								$sucursales = ControladorMaestros::ctrMostrarSucursales();
+	              foreach ($sucursales as $key => $value) {
+	                echo '<option data-id="'.$value["IdSucursal"].'" data-color="'.$value["IpServidor"].'" value="'.$value["Servidor"].'">'.$value["Sucursal"].'</option>';
+	              }
+							}else{
+								$id = $_SESSION["sucursal"];
+								$sucursales = ControladorMaestros::ctrSucursal($id);
+	              foreach ($sucursales as $key => $value) {
+	                echo '<option data-id="'.$value["IdSucursal"].'" data-color="'.$value["IpServidor"].'" value="'.$value["Servidor"].'">'.$value["Sucursal"].'</option>';
+	              }
+							}                                       
             ?>
 					</select>
 				</div>
 			</div>
 		</div>
-		<div class="progress">
-      <div
-        class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
-        role="progressbar"
-        style="width: 0%"
-        aria-valuenow="25"
-        aria-valuemin="0"
-        aria-valuemax="100"
-      ></div>
-    </div>
+		<div class="progress"><div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div></div>
 			<div class="row clearfix">
 				<div class="col-lg-12 col-md-12 col-sm-12 mb-30">
 					<div class="pd-20 card-box">
@@ -173,7 +172,6 @@
 				<div class="pd-20">					
 				</div>
 				<div class="pb-20">
-					<div id="custom-tabs-five-overlay" role="tabpanel" aria-labelledby="custom-tabs-five-overlay-tab"><div class="overlay-wrapper"><div id="overlay4" class="overlay" style="display: none;"><i class="fas fa-3x fa-sync-alt fa-spin"></i><div class="text-bold pt-2">Cargando...</div></div></div></div>
 					<strong><label>Cantidad de facturas: </label></strong>
           <label id="totalfacts2"> </label>
           <strong><label> | Cantidad de devoluciones: </label></strong> 

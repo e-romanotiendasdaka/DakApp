@@ -22,25 +22,24 @@
           <select class="custom-select col-6" id="seleccionarSucursal3" name="seleccionarSucursal3" required>
             <option selected="">Seleccionar...</option>
             <?php
-              $sucursales = ControladorMaestros::ctrMostrarSucursales();
-              foreach ($sucursales as $key => $value) {
-                echo '<option data-id="'.$value["IdSucursal"].'" data-color="'.$value["IpServidor"].'" value="'.$value["Servidor"].'">'.$value["Sucursal"].'</option>';
-              }                           
+              if ($_SESSION["sucursal"] == 0) {
+                $sucursales = ControladorMaestros::ctrMostrarSucursales();
+                foreach ($sucursales as $key => $value) {
+                  echo '<option data-id="'.$value["IdSucursal"].'" data-color="'.$value["IpServidor"].'" value="'.$value["Servidor"].'">'.$value["Sucursal"].'</option>';
+                }
+              }else{
+                $id = $_SESSION["sucursal"];
+                $sucursales = ControladorMaestros::ctrSucursal($id);
+                foreach ($sucursales as $key => $value) {
+                  echo '<option data-id="'.$value["IdSucursal"].'" data-color="'.$value["IpServidor"].'" value="'.$value["Servidor"].'">'.$value["Sucursal"].'</option>';
+                }
+              }                                       
             ?>
           </select>
         </div>
       </div>
     </div>
-    <div class="progress">
-      <div
-        class="progress-bar bg-warning progress-bar-striped progress-bar-animated"
-        role="progressbar"
-        style="width: 0%"
-        aria-valuenow="25"
-        aria-valuemin="0"
-        aria-valuemax="100"
-      ></div>
-    </div>
+    <div class="progress"><div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div></div>
     <div class="pd-20 card-box mb-30">
       <div class="clearfix">
         <div class="pull-left">

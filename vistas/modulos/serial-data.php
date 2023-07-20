@@ -20,14 +20,7 @@
 			</div>
 		</div>
 		<div class="progress">
-      <div
-        class="progress-bar bg-danger progress-bar-striped progress-bar-animated"
-        role="progressbar"
-        style="width: 0%"
-        aria-valuenow="25"
-        aria-valuemin="0"
-        aria-valuemax="100"
-      ></div>
+      <div class="progress-bar bg-danger progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
     </div>
 		<div class="pd-20 card-box mb-30">
 			<div class="clearfix">
@@ -43,10 +36,18 @@
 							<select class="custom-select" id="seleccionarSucursal5" name="seleccionarSucursal5" required>
 								<option selected="">Seleccionar...</option>
 								<?php
-		              $sucursales = ControladorMaestros::ctrMostrarSucursales();
-		              foreach ($sucursales as $key => $value) {
-		                echo '<option value="'.$value["TablaLocal"].'">'.$value["Sucursal"].'</option>';
-		              }                           
+									if ($_SESSION["sucursal"] == 0) {
+										$sucursales = ControladorMaestros::ctrMostrarSucursales();
+			              foreach ($sucursales as $key => $value) {
+			                echo '<option data-id="'.$value["IdSucursal"].'" data-color="'.$value["IpServidor"].'" value="'.$value["Servidor"].'">'.$value["Sucursal"].'</option>';
+			              }
+									}else{
+										$id = $_SESSION["sucursal"];
+										$sucursales = ControladorMaestros::ctrSucursal($id);
+			              foreach ($sucursales as $key => $value) {
+			                echo '<option data-id="'.$value["IdSucursal"].'" data-color="'.$value["IpServidor"].'" value="'.$value["Servidor"].'">'.$value["Sucursal"].'</option>';
+			              }
+									}                                       
 		            ?>
 							</select>
 						</div>
@@ -56,11 +57,25 @@
 							<label>Estatus</label>
 							<select class="custom-select" id="seleccionarEstatus" name="seleccionarEstatus" required>
 								<option selected="">Seleccionar...</option>
-								<option value="Todas">Todas</option>
-								<option value="Despachada">Despachada</option>
-								<option value="Devuelta">Devuelta</option>
-								<option value="Pendiente por despacho">Pendiente por despacho</option>
-								<option value="Pendiente por serializar">Pendiente por serializar</option>
+								<?php
+									if ($_SESSION["sucursal"] == 0) {
+		                echo '<option value="Todas">Todas</option>
+													<option value="Despachada">Despachada</option>
+													<option value="Devuelta">Devuelta</option>
+													<option value="Pendiente por despacho">Pendiente por despacho</option>
+													<option value="Pendiente por serializar">Pendiente por serializar</option>';
+									}else{
+										if ($_SESSION["perfil"] == "Logistica") {
+											echo '<option value="Pendiente por serializar">Pendiente por serializar</option>';
+										}else{
+											echo '<option value="Todas">Todas</option>
+														<option value="Despachada">Despachada</option>
+														<option value="Devuelta">Devuelta</option>
+														<option value="Pendiente por despacho">Pendiente por despacho</option>
+														<option value="Pendiente por serializar">Pendiente por serializar</option>';
+										}
+									}                                       
+		            ?>
 							</select>
 						</div>
 					</div>

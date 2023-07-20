@@ -4,4 +4,8 @@ class ControladorMaestros{
 		$respuesta = ModeloMaestros::mdlMostrarSucursales();
 		return $respuesta;
 	}
+	static public function ctrSucursal($id){
+		$respuesta = ModeloMaestros::mdlSucursal($id);
+		return $respuesta;
+	}
 }
