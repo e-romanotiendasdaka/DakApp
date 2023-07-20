@@ -24,6 +24,7 @@
                 <li><a href="assets-data">Ventas por asesor</a></li>
                 <li><a href="detail-data">Ventas detallado</a></li>
                 <li><a href="discount-data">Ventas con descuento</a></li>
+                <li><a href="test">Prueba</a></li>
               </ul>
             </li>';
         }

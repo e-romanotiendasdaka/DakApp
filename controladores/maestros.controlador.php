@@ -8,4 +8,8 @@ class ControladorMaestros{
 		$respuesta = ModeloMaestros::mdlSucursal($id);
 		return $respuesta;
 	}
+	static public function ctrMostrarTest(){
+		$respuesta = ModeloTets::mdlMostrarTest();
+		return $respuesta;
+	}
 }
