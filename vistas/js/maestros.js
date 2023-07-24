@@ -31,9 +31,10 @@ $("#seleccionarSucursal").change(function(){
         success:function(respuesta){
           var resp = jQuery.parseJSON(respuesta);
           $("#seleccionarCaja").empty();
+          $("#bs-select-1").empty();
           for(var i = 0; i < resp.length; i++) {
-            $("#seleccionarCaja").append(
-            '<option value="'+resp[i]["IdCaja"]+'">'+resp[i]["DescripcionCaja"]+'</option>');
+            $('#bs-select-1 > ul').append('<li class="selected"><a role="option" class="dropdown-item selected" aria-selected="true"><span class=" bs-ok-default check-mark"></span><span class="text">'+resp[i]["DescripcionCaja"]+'</span></a></li>');
+            $("#seleccionarCaja").append('<option value="'+resp[i]["IdCaja"]+'">'+resp[i]["DescripcionCaja"]+'</option>');
             $('#seleccionarCaja > option').prop("selected",true);
             $('#seleccionarCaja > option').prop("selected",true).trigger("change");
           }
@@ -48,9 +49,10 @@ $("#seleccionarSucursal").change(function(){
               success:function(respuesta){
                 var resp = jQuery.parseJSON(respuesta);  
                 $("#seleccionarOperador").empty();
+                $("#bs-select-2").empty();
                 for(var i = 0; i < resp.length; i++) {
-                  $("#seleccionarOperador").append(
-                  '<option value="'+resp[i]["IdOperador"]+'">'+resp[i]["Operador"]+'</option>');
+                  $('#bs-select-2 > ul').append('<li class="selected"><a role="option" class="dropdown-item selected" aria-selected="true"><span class=" bs-ok-default check-mark"></span><span class="text">'+resp[i]["Operador"]+'</span></a></li>');
+                  $("#seleccionarOperador").append('<option value="'+resp[i]["IdOperador"]+'">'+resp[i]["Operador"]+'</option>');
                   $('#seleccionarOperador > option').prop("selected",true);
                   $('#seleccionarOperador > option').prop("selected",true).trigger("change");
                 }

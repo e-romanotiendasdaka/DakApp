@@ -600,10 +600,7 @@ function consultarFacturas(){
   $('.progress-bar').fadeIn();
   var fechaInicial = $("#fechaInicial5").val();
   var fechaFinal = $("#fechaFinal5").val();
-  var seleccionarSucursal = $("#seleccionarSucursal5").val();
-  var selectedOption2 = $("#seleccionarSucursal5").find('option:selected');
   var estatus = $("#seleccionarEstatus").val();
-  console.log("estatus", estatus);
   var startDate = new Date(fechaInicial);
   var endDate = new Date(fechaFinal);
   var diffMs = Math.abs(endDate - startDate);
@@ -643,6 +640,73 @@ function consultarFacturas(){
           var Referencia = resp[i]["Referencia"];
           var Nombre = resp[i]["Nombre"];
           table3.row.add([Sucursal,Fecha,CajaFactura,Estatus,MontoTotal,EstatusSerializacion,IndTieneDevolucion,IndDevolucionCompleta,Referencia,Nombre]);
+        }
+        table3.draw();
+      },
+      complete: function () {
+        progressBar.style.width = '100%';
+        if (progressBar.style.width = '100%') {
+        setTimeout(function(){
+          $('.progress-bar').fadeOut();
+          progressBar.style.width = '0%';
+         }, 1500);
+      }
+      }
+    })
+  }
+}
+function consultarAsesores(){ 
+  const progressBar = document.querySelector('.progress-bar');
+  $('.progress-bar').fadeIn();
+  var fechaInicial = $("#fechaInicial6").val();
+  var fechaFinal = $("#fechaFinal6").val();
+  var seleccionarSucursal = $("#seleccionarSucursal6").val();
+  var selectedOption = $("#seleccionarSucursal6").find('option:selected');
+  var id = selectedOption.data('id');
+  console.log("id", id);
+  var startDate = new Date(fechaInicial);
+  var endDate = new Date(fechaFinal);
+  var diffMs = Math.abs(endDate - startDate);
+  var diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays > 30)  {
+    alert ("El rango de fechas supera un mes entre ellas!");
+  } 
+  else{
+    progressBar.style.width = '5%';
+      $.ajax({
+      url:"ajax/asesoresreport.ajax.php",
+      method:"POST",
+      data: { "fechaInicial" : fechaInicial, 
+              "fechaFinal" : fechaFinal, 
+              "sucursal" : id, 
+        cache: false,
+        contentType: false,
+        processData: false,
+        dataType: "json"},
+      beforeSend: function () {
+        progressBar.style.width = '50%';
+      },
+      success:function(respuesta){
+        var table3 = $('.table-consult').DataTable();
+        table3.clear().draw();
+        var resp = jQuery.parseJSON(respuesta); 
+        for(var i = 0; i < resp.length; i++) {
+          var Fecha = resp[i]["Fecha"];
+          var CodigoSucursal = resp[i]["CodigoSucursal"];
+          var Sucursal = resp[i]["Sucursal"];
+          var Cedula = resp[i]["Cedula"];
+          var Nombre = resp[i]["Nombre"];
+          var FechaIngresi = resp[i]["FechaIngresi"];
+          var FechaEgreso = resp[i]["FechaEgreso"];
+          var Departamento = resp[i]["Departamento"];
+          var Categoria1 = resp[i]["Categoria1"];
+          var Meta = resp[i]["Meta"];
+          var UniVtas = resp[i]["UniVtas"];
+          var Cumplimiento = resp[i]["Cumplimiento"];
+          var BonoCat2 = resp[i]["BonoCat2"];
+          var BonoMCD = resp[i]["BonoMCD"];
+          var ServInstalacion = resp[i]["ServInstalacion"];
+          table3.row.add([Fecha,CodigoSucursal,Sucursal,Cedula,Nombre,FechaIngresi,FechaEgreso,Departamento,Categoria1,Meta,UniVtas,Cumplimiento,BonoCat2,BonoMCD,ServInstalacion]);
         }
         table3.draw();
       },

@@ -14,7 +14,7 @@ session_start();
     <!-- Mobile Specific Metas -->
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
     <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="vistas/deskapp/vendors/fonts/Inter.css"/>
     <!-- CSS -->
     <link rel="stylesheet" type="text/css" href="vistas/deskapp/vendors/styles/core.css"/>
     <link rel="stylesheet" type="text/css" href="vistas/deskapp/vendors/styles/icon-font.min.css"/>
@@ -22,8 +22,8 @@ session_start();
     <link rel="stylesheet" type="text/css" href="vistas/deskapp/src/plugins/datatables/css/responsive.bootstrap4.min.css"/>
     <link rel="stylesheet" type="text/css" href="vistas/deskapp/vendors/styles/style.css" />
     <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GBZ3SGGX85"></script>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2973766580778258" crossorigin="anonymous"></script>
+<!--     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GBZ3SGGX85"></script> -->
+<!--     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2973766580778258" crossorigin="anonymous"></script> -->
   </head>
   <body class="sidebar-dark header-dark">
     <?php
@@ -38,6 +38,7 @@ session_start();
              $_GET["ruta"] == "detail-data" ||
              $_GET["ruta"] == "discount-data" ||
              $_GET["ruta"] == "serial-data" ||
+             $_GET["ruta"] == "data-assets-shop" ||
              $_GET["ruta"] == "login" ||
              $_GET["ruta"] == "salir"){
             include "modulos/".$_GET["ruta"].".php";
@@ -73,9 +74,11 @@ session_start();
     <!-- Datatable Setting js -->
     <script src="vistas/deskapp/vendors/scripts/datatable-setting.js"></script>
     <script src="vistas/deskapp/vendors/scripts/dashboard3.js"></script>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NXZMQSS" height="0" width="0" style="display: none; visibility: hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
+    <!-- Chart js -->
+    <script src="vistas/deskapp/src/plugins/highcharts-6.0.7/code/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-3d.js"></script>
+    <script src="vistas/deskapp/src/plugins/highcharts-6.0.7/code/highcharts-more.js"></script>
+    <script src="vistas/deskapp/vendors/scripts/highchart-setting.js"></script>
     <!-- Jquery Add -->
     <script src="vistas/js/plantilla.js"></script>
     <script src="vistas/js/maestros.js"></script>

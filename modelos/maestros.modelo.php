@@ -9,14 +9,21 @@ class ModeloMaestros{
 		$stmt = null;
 	}	
 	static public function mdlMostrarSucursales(){
-		$stmt = Conexion::conectar()->prepare("SELECT A.IdSucursal,A.IpServidor,A.Servidor,B.Sucursal,A.TablaLocal FROM DK_Server AS A INNER JOIN DK_Sucursales B ON A. IdSucursal = B.IdSucursal");
+		$stmt = Conexion::conectar()->prepare("SELECT A.IdSucursal,A.IpServidor,A.Servidor,B.Sucursal,A.TablaLocal,B.CodigoSucursal FROM DK_Server AS A INNER JOIN DK_Sucursales B ON A.IdSucursal = B.IdSucursal");
 		$stmt -> execute();
 		return $stmt -> fetchAll();
 		$stmt -> close();
 		$stmt = null;
 	}
 	static public function mdlSucursal($id){
-		$stmt = Conexion::conectar()->prepare("SELECT A.IdSucursal,A.IpServidor,A.Servidor,B.Sucursal,A.TablaLocal FROM DK_Server AS A INNER JOIN DK_Sucursales B ON A. IdSucursal = B.IdSucursal WHERE A.IdSucursal = $id");
+		$stmt = Conexion::conectar()->prepare("SELECT A.IdSucursal,A.IpServidor,A.Servidor,B.Sucursal,A.TablaLocal,B.CodigoSucursal FROM DK_Server AS A INNER JOIN DK_Sucursales B ON A.IdSucursal = B.IdSucursal WHERE A.IdSucursal = $id");
+		$stmt -> execute();
+		return $stmt -> fetchAll();
+		$stmt -> close();
+		$stmt = null;
+	}
+	static public function mdlDataWareHouse($tabla,$codigoSucursal,$fechaInicial,$fechaFinal){
+		$stmt = Conexion::conectarDataWareHouse()->prepare("SELECT * FROM $tabla WHERE CodigoSucursal = $codigoSucursal AND CAST(Fecha AS DATE) BETWEEN '$fechaInicial' AND '$fechaFinal'");
 		$stmt -> execute();
 		return $stmt -> fetchAll();
 		$stmt -> close();

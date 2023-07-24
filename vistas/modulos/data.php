@@ -40,7 +40,7 @@
 			</div>
 		</div>
 		<div class="progress"><div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div></div>
-		<div class="pd-20 card-box mb-30">
+		<div class="pd-20 card-box mb-30" id="divData">
 			<div class="clearfix">
 				<div class="pull-left">
 					<h4 class="text-success h4">Caja(s), Operador(es) y fechas</h4>
@@ -51,15 +51,13 @@
 					<div class="col-md-4 col-sm-12">
 						<div class="form-group">
 							<label>Caja(s)</label>
-							<select class="selectpicker form-control" data-style="btn-outline-success" multiple data-actions-box="true" data-selected-text-format="count" name="seleccionarCaja" id="seleccionarCaja">
-							</select>
+							<select class="selectpicker form-control" data-style="btn-outline-success" multiple data-actions-box="true" data-selected-text-format="count" name="seleccionarCaja" id="seleccionarCaja"></select>
 						</div>
 					</div>
 					<div class="col-md-4 col-sm-12">
 						<div class="form-group">
 							<label>Operador(es)</label>
-							<select class="selectpicker form-control" data-size="5" data-style="btn-outline-success" multiple data-actions-box="true" data-selected-text-format="count" id="seleccionarOperador" name="seleccionarOperador">
-							</select>
+							<select class="selectpicker form-control" data-style="btn-outline-success" multiple data-actions-box="true" data-selected-text-format="count" id="seleccionarOperador" name="seleccionarOperador"></select>
 						</div>
 					</div>
 					<div class="col-md-2 col-sm-12">
