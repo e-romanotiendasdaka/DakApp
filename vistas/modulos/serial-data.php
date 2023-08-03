@@ -39,13 +39,13 @@
 									if ($_SESSION["sucursal"] == 0) {
 										$sucursales = ControladorMaestros::ctrMostrarSucursales();
 			              foreach ($sucursales as $key => $value) {
-			                echo '<option data-id="'.$value["IdSucursal"].'" data-color="'.$value["IpServidor"].'" value="'.$value["TablaLocal"].'">'.$value["Sucursal"].'</option>';
+			                echo '<option data-id="'.$value["IdSucursal"].'" data-color="'.$value["IpServidor"].'" value="'.$value["Servidor"].'">'.$value["Sucursal"].'</option>';
 			              }
 									}else{
 										$id = $_SESSION["sucursal"];
 										$sucursales = ControladorMaestros::ctrSucursal($id);
 			              foreach ($sucursales as $key => $value) {
-			                echo '<option data-id="'.$value["IdSucursal"].'" data-color="'.$value["IpServidor"].'" value="'.$value["TablaLocal"].'">'.$value["Sucursal"].'</option>';
+			                echo '<option data-id="'.$value["IdSucursal"].'" data-color="'.$value["IpServidor"].'" value="'.$value["Servidor"].'">'.$value["Sucursal"].'</option>';
 			              }
 									}                                       
 		            ?>

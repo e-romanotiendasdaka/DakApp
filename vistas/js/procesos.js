@@ -598,6 +598,11 @@ function buscarVentasDescuento(){
 function consultarFacturas(){ 
   const progressBar = document.querySelector('.progress-bar');
   $('.progress-bar').fadeIn();
+  var Servidor = $('#seleccionarSucursal5').val();
+  var selectedOption = $("#seleccionarSucursal5").find('option:selected');
+  var id = selectedOption.data('id');
+  var selectedOption2 = $("#seleccionarSucursal5").find('option:selected');
+  var ip = selectedOption2.data('color');
   var fechaInicial = $("#fechaInicial5").val();
   var fechaFinal = $("#fechaFinal5").val();
   var estatus = $("#seleccionarEstatus").val();
@@ -616,7 +621,9 @@ function consultarFacturas(){
       data: { "fechaInicial" : fechaInicial, 
               "fechaFinal" : fechaFinal, 
               "estatus" : estatus, 
-              "tabla" : seleccionarSucursal, 
+              "id" : id, 
+              "ip" : ip, 
+              "Servidor" : Servidor, 
         cache: false,
         contentType: false,
         processData: false,
@@ -663,7 +670,6 @@ function consultarAsesores(){
   var seleccionarSucursal = $("#seleccionarSucursal6").val();
   var selectedOption = $("#seleccionarSucursal6").find('option:selected');
   var id = selectedOption.data('id');
-  console.log("id", id);
   var startDate = new Date(fechaInicial);
   var endDate = new Date(fechaFinal);
   var diffMs = Math.abs(endDate - startDate);
