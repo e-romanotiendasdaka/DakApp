@@ -21,9 +21,6 @@ session_start();
     <link rel="stylesheet" type="text/css" href="vistas/deskapp/src/plugins/datatables/css/dataTables.bootstrap4.min.css"/>
     <link rel="stylesheet" type="text/css" href="vistas/deskapp/src/plugins/datatables/css/responsive.bootstrap4.min.css"/>
     <link rel="stylesheet" type="text/css" href="vistas/deskapp/vendors/styles/style.css" />
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-<!--     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GBZ3SGGX85"></script> -->
-<!--     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2973766580778258" crossorigin="anonymous"></script> -->
   </head>
   <body class="sidebar-dark header-dark">
     <?php
@@ -32,8 +29,7 @@ session_start();
         include "modulos/encabezado.php"; 
         include "modulos/menu.php";
         if(isset($_GET["ruta"])){
-          if($_GET["ruta"] == "inicio" ||
-             $_GET["ruta"] == "data" ||
+          if($_GET["ruta"] == "data" ||
              $_GET["ruta"] == "assets-data" ||
              $_GET["ruta"] == "detail-data" ||
              $_GET["ruta"] == "discount-data" ||
@@ -46,7 +42,7 @@ session_start();
             include "modulos/404.php";
           }
         }else{
-          include "modulos/inicio.php";
+          include "modulos/data.php";
         } 
       }else{
         include "modulos/login.php";

@@ -1,6 +1,6 @@
 <div class="left-side-bar">
   <div class="brand-logo">
-    <a href="inicio">
+    <a href="data">
       <img src="vistas/img/menu.jpg" style="width: 110px; height: 50px; margin: auto;" class="dark-logo"/>
       <img src="vistas/img/menu.jpg" style="width: 110px; height: 50px; margin: auto;" class="light-logo"/>
     </a>
