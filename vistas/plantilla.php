@@ -25,7 +25,7 @@ session_start();
   <body class="sidebar-dark header-dark">
     <?php
       if(isset($_SESSION["iniciarSesion"]) && $_SESSION["iniciarSesion"] == "ok"){
-        include "modulos/preloader.php"; 
+        //include "modulos/preloader.php"; 
         include "modulos/encabezado.php"; 
         include "modulos/menu.php";
         if(isset($_GET["ruta"])){
@@ -35,6 +35,7 @@ session_start();
              $_GET["ruta"] == "discount-data" ||
              $_GET["ruta"] == "serial-data" ||
              $_GET["ruta"] == "data-assets-shop" ||
+             $_GET["ruta"] == "data-personalized" ||             
              $_GET["ruta"] == "login" ||
              $_GET["ruta"] == "salir"){
             include "modulos/".$_GET["ruta"].".php";

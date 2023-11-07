@@ -95,7 +95,7 @@
 				<div class="row">
 				<div class="col-md-12 col-sm-12 text-right">
 					<button type="button" class="btn btn-danger" onclick="consultarFacturas()"><i class="nav-icon fa fa-search"></i> Buscar</button>
-          <button type="button" class="btn btn-secondary" onclick="limpiar()"><i class="fa-solid fa-broom"></i> Limpiar</button>
+          			<button type="button" class="btn btn-secondary" onclick="limpiar()"><i class="fa-solid fa-broom"></i> Limpiar</button>
 				</div>
 			</div>
 			</form>

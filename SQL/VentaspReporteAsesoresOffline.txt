@@ -1,0 +1,134 @@
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Romano,Elvis>
+-- Create date: <2023-11-01>
+-- Description:	<Obtener Ventas por Asesores Offline de Tienda>
+-- =============================================
+CREATE OR ALTER PROCEDURE VentaspReporteAsesoresOffline (@FechaInicio datetime, @FechaFin datetime, @IdAsesor varchar(max) = '', @NumFacturas varchar(max) = '',@Cajas varchar(max) = '', @IdAreas varchar(max)='')
+AS
+BEGIN
+SET NOCOUNT ON;
+DECLARE @totalfacturas int =0, @totalnotascredito int= 0
+DECLARE @TotalSalesLogs TABLE (IdRegistro INT IDENTITY(1,1),IdLogIntegracion INT,Data NVARCHAR(max))
+DECLARE @Invoice TABLE (IdRegistro INT IDENTITY(1,1),IdLogIntegracion INT,IdMovimiento bigint,IdSucursal int,IdCaja int,IdRecogidaCaja int,IdArea int,IdEstatus int,
+       IdUsuario bigint,IdAfiliacion bigint,IdVendedor bigint,SerialFiscal varchar(50),CodigoCaja smallint,NumeroOperacion int,Operacion varchar(24),NumeroFactura bigint,
+       CajaFactura varchar(10),NumeroControl bigint,CantidadProductos int,Puntos decimal(18,8),GuiaLicor int,Observaciones varchar(200),PuntosClub money,MontoTotal decimal(18,8),
+       MontoIva decimal(18,8),MontoImpuesto1 decimal(18,8),MontoImpuesto2 decimal(18,8),MontoDescuento decimal(18,8),MontoExento decimal(18,8), MontoPagado decimal(18,8),
+       FactorConversion decimal(18,8),IndMultiplicar bit,Fecha datetime,FechaInicio datetime,FechaFin datetime,FechaInicioFormaPago datetime,FechaFinFormaPago datetime,    
+	   IndLogIntegracion bit)
+DECLARE @InvoiceDetails TABLE (IdRegistro INT IDENTITY(1,1),IdLogIntegracion INT,IdDetalle bigint,IdMovimiento bigint,IdSucursal int,IdCaja int,IdArea int,IdProducto bigint,
+        IdEmpaque bigint,IdProveedor bigint,IdCategoria int,IdDescuento int,IdTasaImpuesto int,BarraEmpaque varchar(50),NumeroUnidades numeric(18,8),Entradas decimal(18,8),
+        Salidas decimal(18,8),CostoBase numeric(18,8),CostoConversion numeric(18,8),CostoNetoBase numeric(18,8),CostoNetoConversion numeric(18,8),CostoNetoVentaBase numeric(18,8),
+        CostoNetoVentaConversion numeric(18,8),PVPBase numeric(18,8),PVPConversion numeric(18,8),FactorNeto numeric(18,8),FactorNetoVenta numeric(18,8),FactorVenta numeric(18,8),
+        Descuento numeric(18,8),TasaImpuesto decimal(18,8),Iva decimal(18,8),Abonos decimal(18,8),PuntosClub money,Serial varchar(50),TipoEntradaDatos varchar(10),
+        Fecha datetime,Garantia numeric,IdAsesor bigint)
+DECLARE @VendorsData TABLE (IdRegistro int identity(1,1),IdAsesor bigint)
+DECLARE @AreaData TABLE (IdRegistro int identity(1,1),IdArea bigint)
+DECLARE @CashRegisterData TABLE (IdRegistro int identity(1,1),IdCaja bigint)
+DECLARE @InvoicesData TABLE (IdRegistro int identity(1,1),NumFactura varchar(10))
+
+INSERT INTO @VendorsData
+SELECT CAST(value AS BIGINT) FROM STRING_SPLIT(@IdAsesor, ',');
+
+INSERT INTO @InvoicesData
+SELECT value FROM STRING_SPLIT(@NumFacturas, ',');
+
+INSERT INTO @AreaData
+SELECT value FROM STRING_SPLIT(@IdAreas, ',');
+
+INSERT INTO @CashRegisterData
+SELECT value FROM STRING_SPLIT(@Cajas, ',');
+
+INSERT INTO @TotalSalesLogs
+SELECT ls.IdLogIntegracion,ls.Data FROM POS_MDW.Integracion.LogIntegraciones ls WITH(NOLOCK) 
+WHERE ls.IdTipoLog = 1 AND ls.IdCaja <> ISNULL((SELECT ISNULL(C.IdCaja, 0) FROM ERP_POS_CENTRAL.ConfiguracionPOS.Cajas C WITH(NOLOCK) WHERE C.SerialImpresora = 'CAJAKLK'), 0)
+AND (((SELECT JSDATA.Fecha FROM OPENJSON((SELECT FACTURAS FROM OPENJSON(Data) WITH (Facturas NVARCHAR(MAX) '$.Facturas' AS JSON))) WITH (Fecha datetime '$.Fecha')JSDATA) between @FechaInicio AND @FechaFin) OR @FechaInicio='' OR @FechaFin='')		 	
+
+;WITH CteFacturas AS(
+	SELECT A.IdLogIntegracion,B.Facturas
+	FROM @TotalSalesLogs A
+	CROSS APPLY ( SELECT * FROM OPENJSON(Data) WITH (Facturas nvarchar(MAX) '$.Facturas' AS JSON)) B
+)
+INSERT INTO @Invoice([IdLogIntegracion],[IdMovimiento],[IdSucursal],[IdCaja],[IdRecogidaCaja],[IdArea],[IdEstatus],[IdUsuario],[IdAfiliacion],[IdVendedor],[SerialFiscal],[CodigoCaja],
+			[NumeroOperacion],[Operacion],[NumeroFactura],[CajaFactura],[NumeroControl],[CantidadProductos],[Puntos],[GuiaLicor],[Observaciones],[PuntosClub],[MontoTotal],[MontoIva],
+			[MontoImpuesto1],[MontoImpuesto2],[MontoDescuento],[MontoExento],[MontoPagado],[FactorConversion],[IndMultiplicar],[Fecha],[FechaInicio],[FechaFin],[FechaInicioFormaPago],
+			[FechaFinFormaPago],[IndLogIntegracion])
+SELECT A.IdLogIntegracion,B.IdMovimiento,B.IdSucursal,B.IdCaja,B.IdRecogidaCaja,B.IdArea,B.IdEstatus,B.IdUsuario,B.IdAfiliacion,B.IdVendedor,B.SerialFiscal,B.CodigoCaja,B.NumeroOperacion,
+	   B.Operacion,B.NumeroFactura,B.CajaFactura,B.NumeroControl,B.CantidadProductos,B.Puntos,B.GuiaLicor,B.Observaciones,B.PuntosClub,B.MontoTotal,B.MontoIva,B.MontoImpuesto1,
+	   B.MontoImpuesto2,B.MontoDescuento,B.MontoExento,B.MontoPagado,B.FactorConversion,B.IndMultiplicar,B.Fecha,B.FechaInicio,B.FechaFin,B.FechaInicioFormaPago,B.FechaFinFormaPago,
+	   B.IndLogIntegracion
+FROM CteFacturas A
+CROSS APPLY ( SELECT * FROM OPENJSON(Facturas) WITH (IdMovimiento bigint,IdSucursal int,IdCaja int,IdRecogidaCaja bigint,IdArea int,IdEstatus int,IdUsuario bigint,IdAfiliacion bigint,
+IdVendedor bigint,SerialFiscal varchar(50),CodigoCaja smallint,NumeroOperacion int,Operacion varchar(24),NumeroFactura bigint,CajaFactura varchar(10),NumeroControl bigint,
+CantidadProductos int,Puntos decimal(18,8),GuiaLicor int,Observaciones varchar(200),PuntosClub money,MontoTotal decimal(18,8),MontoIva decimal(18,8),MontoImpuesto1 decimal(18,8),
+MontoImpuesto2 decimal(18,8),MontoDescuento decimal(18,8),MontoExento decimal(18,8),MontoPagado decimal(18,8),FactorConversion decimal(18,8),
+IndMultiplicar bit,Fecha datetime,FechaInicio datetime,FechaFin datetime,FechaInicioFormaPago datetime,FechaFinFormaPago datetime,IndLogIntegracion bit)) B
+
+
+;WITH CteFacturasDetalle AS(
+	SELECT A.IdLogIntegracion,B.DetalleFacturas
+	FROM @TotalSalesLogs A
+	CROSS APPLY ( SELECT * FROM OPENJSON(Data) WITH (DetalleFacturas nvarchar(MAX) '$.DetalleFacturas' AS JSON)) B
+)
+INSERT INTO @InvoiceDetails([IdLogIntegracion],[IdDetalle],[IdMovimiento],[IdSucursal],[IdCaja],[IdArea],[IdProducto],[IdEmpaque],[IdProveedor], [IdCategoria],[IdDescuento],
+			[IdTasaImpuesto],[BarraEmpaque],[NumeroUnidades],[Entradas],[Salidas],[CostoBase],[CostoConversion],[CostoNetoBase],[CostoNetoConversion],[CostoNetoVentaBase],
+			[CostoNetoVentaConversion],[PVPBase],[PVPConversion],[FactorNeto],[FactorNetoVenta],[FactorVenta],[Descuento],[TasaImpuesto],[Iva],[Abonos],[PuntosClub],[Serial],
+			[TipoEntradaDatos],[Fecha],[Garantia],[IdAsesor])
+SELECT A.IdLogIntegracion,B.IdDetalle,B.IdMovimiento,B.IdSucursal,B.IdCaja,B.IdArea,B.IdProducto,B.IdEmpaque,B.IdProveedor,B.IdCategoria,B.IdDescuento,B.IdTasaImpuesto,B.BarraEmpaque,
+	   B.NumeroUnidades,B.Entradas,B.Salidas,B.CostoBase,B.CostoConversion,B.CostoNetoBase,B.CostoNetoConversion,B.CostoNetoVentaBase,B.CostoNetoVentaConversion,B.PVPBase,B.PVPConversion,
+	   B.FactorNeto,B.FactorNetoVenta,B.FactorVenta,B.Descuento,B.TasaImpuesto,B.Iva,0,B.PuntosClub,B.Serial,B.TipoEntradaDatos,B.Fecha,ISNULL(B.Garantia,0),ISNULL(B.IdAsesor,-1)
+FROM CteFacturasDetalle A
+CROSS APPLY ( SELECT * FROM OPENJSON(DetalleFacturas) WITH (IdDetalle bigint,IdMovimiento bigint,IdSucursal int,IdCaja int,IdArea int,IdProducto bigint,IdEmpaque bigint,IdProveedor bigint,
+IdCategoria int,IdDescuento int,IdTasaImpuesto int,BarraEmpaque varchar(50),NumeroUnidades numeric(18,8),Entradas numeric(18,8),Salidas numeric(18,8),CostoBase numeric(18,8),
+CostoConversion numeric(18,8),CostoNetoBase numeric(18,8),CostoNetoConversion numeric(18,8),CostoNetoVentaBase numeric(18,8),CostoNetoVentaConversion numeric(18,8),PVPBase numeric(18,8),PVPConversion numeric(18,8),
+FactorNeto numeric(18,8),FactorNetoVenta numeric(18,8),FactorVenta numeric(18,8),Descuento numeric(18,8),TasaImpuesto decimal(18,8),Iva decimal(18,8),PuntosClub money,Serial varchar(50),
+TipoEntradaDatos varchar(10),Fecha datetime,Garantia numeric,IdAsesor bigint)) B
+
+SET @totalfacturas =  (SELECT COUNT(DISTINCT i.IdLogIntegracion)-((SELECT COUNT(DISTINCT value) FROM string_split(STRING_AGG(CONVERT(VARCHAR(MAX),IIF(i.MontoTotal<0,i.IdLogIntegracion,0)),','),',') WHERE value <> 0)) TotalFacts
+FROM @Invoice i INNER JOIN @InvoiceDetails id ON i.IdMovimiento = id.IdMovimiento and i.IdCaja = id.IdCaja	 	
+WHERE (((CASE WHEN (id.IdAsesor IN (-1,0,1)) THEN -1 ELSE id.IdAsesor END) IN (SELECT IdAsesor FROM @VendorsData) ) OR (@IdAsesor='')) 
+AND	((id.IdArea IN (SELECT IdArea FROM @AreaData)) OR (@IdAreas='') ) AND ((i.IdCaja IN (SELECT IdCaja From @CashRegisterData)) OR (@Cajas = '')) 
+AND ((i.CajaFactura IN (SELECT NumFactura FROM @InvoicesData)) OR (@NumFacturas='') OR ((CAST(i.NumeroFactura AS varchar(10)) IN (SELECT NumFactura FROM @InvoicesData))) ) 
+AND (i.IdEstatus <> 46) AND (i.NumeroControl > 0))
+
+SET @totalnotascredito= (SELECT ((SELECT COUNT(DISTINCT value) FROM string_split(STRING_AGG(CONVERT(VARCHAR(MAX),IIF(i.MontoTotal<0,i.IdLogIntegracion,0)),','),',') WHERE value <> 0)) TotalNC
+FROM @Invoice i INNER JOIN @InvoiceDetails id ON i.IdMovimiento = id.IdMovimiento and i.IdCaja = id.IdCaja	 	
+WHERE (((CASE WHEN (id.IdAsesor IN (-1,0,1)) THEN -1 ELSE id.IdAsesor END) IN (SELECT IdAsesor FROM @VendorsData) ) OR (@IdAsesor='')) 
+AND ((id.IdArea IN (SELECT IdArea FROM @AreaData)) OR (@IdAreas='') ) AND  ( (i.IdCaja IN (SELECT IdCaja From @CashRegisterData)) OR (@Cajas = '')) 
+AND ((i.CajaFactura IN (SELECT NumFactura FROM @InvoicesData)) OR (@NumFacturas='') OR ((CAST(i.NumeroFactura AS varchar(10)) IN (SELECT NumFactura FROM @InvoicesData)))) 
+AND (i.IdEstatus <> 46) AND (i.NumeroControl > 0))
+
+SELECT (CASE WHEN id.IdAsesor = -1 THEN 'SIN ASESOR ASIGNADO' ELSE UPPER(e.Nombre) + ' ' + UPPER(e.Apellido) END) AS Asesor,
+(CASE WHEN id.IdAsesor = -1 THEN 'N/A' ELSE e.NumeroDocumento END) AS Cedula,@totalfacturas as totalfacts,@totalnotascredito as totalnc,i.Fecha,UPPER(s.Sucursal) AS Sucursal, 
+ISNULL(s.ClaveExterna,'') AS idsucursalsap,i.NumeroFactura,i.IdCaja,i.IdMovimiento,i.CodigoCaja as Caja,i.NumeroControl,p.Nombre AS Producto,id.PVPBase AS PVP,id.PVPConversion,
+p.IdProducto,ISNULL(p.ClaveExterna, '') AS CodigoSAP,id.IdArea,UPPER(a.Area) AS area,
+CASE WHEN i.MontoTotal < 0 THEN CAST(id.Entradas AS int)  * - 1 ELSE CAST(id.Salidas AS int)END AS Cantidad,
+CASE WHEN i.MontoTotal < 0 THEN (ABS(id.PVPBase * id.Entradas)) * -1 ELSE (id.PVPBase * id.Salidas) END AS PrecioBruto,
+CASE WHEN i.MontoTotal < 0 THEN (ABS(id.PVPBase * id.Entradas)/ tasa.FactorConversion) * -1 ELSE (id.PVPBase * id.Salidas)/i.FactorConversion END AS PrecioBrutoUSD,
+CASE WHEN i.MontoTotal < 0 THEN (ABS(id.PVPBase * id.Entradas) - ABS(ISNULL(id.Descuento,0))) * -1 ELSE (id.PVPBase * id.Salidas) - ISNULL(id.Descuento,0) END AS PrecioNeto,
+CASE WHEN i.MontoTotal < 0 THEN ((ABS(id.PVPBase * id.Entradas) - ABS(ISNULL(id.Descuento,0)))/tasa.FactorConversion) * -1 ELSE ((id.PVPBase * id.Salidas) - ISNULL(id.Descuento,0))/i.FactorConversion END AS PrecioNetoUSD,
+ISNULL(id.Descuento,0) AS Monto_Descuento,
+CASE WHEN i.MontoTotal < 0 THEN (ISNULL(ABS(id.Descuento),0)/ tasa.FactorConversion) *-1 ELSE ISNULL(ABS(id.Descuento),0)/ i.FactorConversion END AS Monto_DescuentoUSD,ISNULL(id.Iva,0) AS Monto_Iva,
+CASE WHEN i.MontoTotal < 0 THEN ISNULL(id.Iva,0)/ tasa.FactorConversion ELSE ISNULL(id.Iva,0)/ i.FactorConversion END AS Monto_IvaUSD,
+CASE WHEN i.MontoTotal < 0 THEN (ABS(id.PVPBase * id.Entradas) + ABS(ISNULL(id.Iva,0)) - ABS(ISNULL(id.Descuento,0))) * -1 ELSE (id.PVPBase * id.Salidas) + ISNULL(id.Iva,0) - ISNULL(id.Descuento,0) END AS Total,
+CASE WHEN i.MontoTotal < 0 THEN ((ABS(id.PVPBase * id.Entradas) + ABS(ISNULL(id.Iva,0)) - ABS(ISNULL(id.Descuento,0)))/tasa.FactorConversion) * -1 ELSE ((id.PVPBase * id.Salidas) + ISNULL(id.Iva,0) - ISNULL(id.Descuento,0))/i.FactorConversion END AS TotalDivisas
+FROM @Invoice i
+INNER JOIN @InvoiceDetails id ON id.IdMovimiento = i.IdMovimiento AND i.IdCaja = id.IdCaja AND id.IdLogIntegracion = i.IdLogIntegracion
+INNER JOIN ERP.Maestro.Sucursales s WITH(NOLOCK) ON s.IdSucursal = id.IdSucursal
+INNER JOIN ERP.Maestro.Areas a WITH(NOLOCK) ON a.IdArea = id.IdArea
+INNER JOIN ERP_MPC.Transaccional.Productos p WITH(NOLOCK) ON id.IdProducto = p.IdProducto
+LEFT JOIN ERP.Seguridad.Usuarios u  WITH(NOLOCK) ON id.IdAsesor = u.IdUsuario
+LEFT JOIN ERP.Maestro.Entidades e  WITH(NOLOCK) ON u.IdEntidad = e.IdEntidad
+LEFT JOIN (SELECT JSON_VALUE(Data,'$[0].Facturas[0].FactorConversion') FactorConversion, df.CajaFactura CajaFactura, df.CajaFacturaOrigen CajaFacturaOrigen
+		   FROM POS_MDW.Integracion.DevolucionesFacturas df WITH(NOLOCK)
+		   INNER JOIN POS_MDW.Integracion.LogIntegraciones li WITH(NOLOCK) ON CONCAT((SELECT CodigoCaja FROM ERP_POS_CENTRAL.ConfiguracionPOS.Cajas WHERE IdCaja = li.IdCaja),  '-' , li.NumeroFactura) = df.CajaFacturaOrigen) tasa ON tasa.CajaFactura = i.CajaFactura
+WHERE ( ((CASE WHEN (id.IdAsesor IN (-1,0,1)) THEN -1 ELSE id.IdAsesor END) IN (SELECT IdAsesor FROM @VendorsData) ) OR (@IdAsesor='')) 
+AND	((id.IdArea IN (SELECT IdArea FROM @AreaData)) OR (@IdAreas='') ) AND  ( (i.IdCaja IN (SELECT IdCaja From @CashRegisterData)) OR (@Cajas = '')) 
+AND ( (i.CajaFactura IN (SELECT NumFactura FROM @InvoicesData)) OR (@NumFacturas='') OR ((CAST(i.NumeroFactura AS varchar(10)) IN (SELECT NumFactura FROM @InvoicesData))) ) 
+AND (i.IdEstatus <> 46) AND (i.NumeroControl > 0)
+FOR JSON PATH
+END
+GO

@@ -1,0 +1,43 @@
+USE [master]
+GO
+/****** Object:  StoredProcedure [dbo].[VentaspObtenerInformacionAreas]    Script Date: 02/11/2023 12:20:00 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Romano,Elvis>
+-- Create date: <2023-11-01>
+-- Description:	<Obtener Asesores de Ventas>
+-- =============================================
+CREATE OR ALTER PROCEDURE [dbo].[VentaspObtenerInformacionAreas]
+AS
+BEGIN
+SET NOCOUNT ON;
+DECLARE @TotalSalesLogs TABLE (IdRegistro INT IDENTITY(1,1),IdLogIntegracion INT,Data NVARCHAR(max))
+DECLARE @AreasData TABLE (IdRegistro INT IDENTITY(1,1),IdArea VARCHAR(MAX))
+DECLARE @AreasData2 TABLE (IdRegistro int identity(1,1),IdArea VARCHAR(MAX))
+DECLARE @Facturas table(NumReg int IDENTITY(1, 1) NOT NULL,IdLogIntegracion bigint,DetalleFacturas nvarchar(MAX))
+
+INSERT INTO @TotalSalesLogs
+SELECT ls.IdLogIntegracion, ls.Data 
+FROM POS_MDW.Integracion.LogIntegraciones ls WITH(nolock) 
+WHERE ls.IdTipoLog = 1 AND ls.IdCaja <> ISNULL((SELECT ISNULL(C.IdCaja, 0) FROM ERP_POS_CENTRAL.ConfiguracionPOS.Cajas C WITH(NOLOCK) WHERE C.SerialImpresora = 'CAJAKLK'), 0)
+
+;WITH CteFacturas AS(
+	SELECT A.IdLogIntegracion,B.DetalleFacturas
+	FROM @TotalSalesLogs A
+	CROSS APPLY ( SELECT * FROM OPENJSON(Data) WITH (DetalleFacturas nvarchar(MAX) '$.DetalleFacturas' AS JSON)) B
+)
+INSERT INTO @AreasData([IdArea])
+SELECT STRING_AGG(CONVERT(NVARCHAR(MAX),ISNULL(B.IdArea,-1)),',' )
+FROM CteFacturas A
+CROSS APPLY ( SELECT * FROM OPENJSON(DetalleFacturas) WITH (IdArea bigint)) B
+
+INSERT INTO @AreasData2
+SELECT distinct value FROM @AreasData CROSS APPLY STRING_SPLIT(IdArea, ','); 
+
+(SELECT a.Area AS area,a.IdArea AS idarea,CONCAT(a.IdArea , ' - ' , a.Area) AS DataArea 
+FROM ERP.Maestro.Areas a WHERE (a.IdArea IN (SELECT DISTINCT IdArea FROM @AreasData2)) )
+FOR JSON PATH
+END

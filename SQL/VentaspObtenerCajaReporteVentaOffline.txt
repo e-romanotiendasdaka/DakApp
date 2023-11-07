@@ -1,0 +1,28 @@
+USE [master]
+GO
+
+/****** Object:  StoredProcedure [dbo].[VentaspObtenerCajaReporteVentaOffline]    Script Date: 03/11/2023 13:27:33 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:		<Romano,Elvis>
+-- Create date: <2023-11-01>
+-- Description:	<Obtener Cajas de Tienda>
+-- =============================================
+CREATE OR ALTER PROCEDURE [dbo].[VentaspObtenerCajaReporteVentaOffline]
+AS
+BEGIN
+SET NOCOUNT ON;
+SELECT DISTINCT ls.IdCaja,c.CodigoCaja AS CodigoCaja,c.Descripcion AS DescripcionCaja
+FROM POS_MDW.Integracion.LogIntegraciones ls WITH(NOLOCK) 
+INNER JOIN [ERP_POS_CENTRAL].[ConfiguracionPOS].[Cajas] c ON c.IdCaja = ls.IdCaja
+WHERE ls.IdTipoLog = 1 AND ls.IdCaja <> ISNULL((SELECT ISNULL(C.IdCaja, 0) FROM ERP_POS_CENTRAL.ConfiguracionPOS.Cajas C WITH(NOLOCK) WHERE C.SerialImpresora = 'CAJAKLK'), 0)
+FOR JSON PATH
+END
+GO
+
+

@@ -1,24 +1,11 @@
 <?php
-require_once "../modelos/serializacion.modelo.php";
-	$ip = $_POST['ip'];
-	$id = $_POST['id'];
-	$fechaInicial = $_POST['fechaInicial'];
-	$fechaFinal = $_POST['fechaFinal'];
-	$horaI = date('00:00:00');
-	$horaF = date('23:59:59');
-	$dateI = $fechaInicial.'T'.$horaI;
-	$dateF = $fechaFinal.'T'.$horaF;
-	$valor1a = "'".$dateI."'";
-	$valor2b = "'".$dateF."'";
+require_once "../modelos/maestros.modelo.php";
+	$servidor = "[".$_POST["Servidor"]."]";
+	$bd = "[master]";
+	$fechaInicial = "'".$_POST['fechaInicial']."'";
+	$fechaFinal = "'".$_POST['fechaFinal']."'";
 	$estatus = "'".$_POST["estatus"]."'";
-	$Servidor = "[".$_POST["Servidor"]."]";
-	$param  = 'master.dbo.SerializacionConsultarFacturas '.$valor1a.','.$valor2b.','.$estatus;
-	$datos2 = 'SerializacionConsultarFacturas '.$valor1a.','.$valor2b.','.$estatus;
-	$datos  = $Servidor.'.'.$param;
-	if ($id == 0) {
-		$respuesta = ModeloSerializacion::mdlMostrarConsultarFacturas($datos);
-		echo json_encode($respuesta);
-	}else{
-		$respuesta = ModeloSerializacion::mdlMostrarConsultarFacturasTiendas($ip,$datos2);
-		echo json_encode($respuesta);
-	}
+	$tabla = "[dbo].[SerializacionConsultarFacturas]";
+	$datos = $fechaInicial.','.$fechaFinal.','.$estatus;
+	$respuesta = ModeloMaestros::mdlConsultarFacturasSerializacion($tabla, $servidor, $bd, $datos);
+	echo json_encode($respuesta);

@@ -29,21 +29,21 @@ class ModeloMaestros{
 		$stmt -> close();
 		$stmt = null;
 	}
-	static public function mdlMostrarCajas($servidor, $tabla, $bd){
-		$stmt = Conexion::conectar()->prepare("EXEC $servidor.$bd.$tabla");
-		$stmt -> execute();
-		return $stmt -> fetch();
-		$stmt -> close();
-		$stmt = null;
-	}
-	static public function mdlMostrarOperadores($servidor, $tabla, $bd){
+	static public function mdlMostrarCajas($servidor, $bd, $tabla){
 		$stmt = Conexion::conectar()->prepare("SET NOCOUNT ON; EXEC $servidor.$bd.$tabla");
 		$stmt -> execute();
 		return $stmt -> fetch();
 		$stmt -> close();
 		$stmt = null;
 	}
-	static public function mdlMostrarAsesores($servidor, $tabla, $bd){
+	static public function mdlMostrarOperadores($servidor, $bd, $tabla){
+		$stmt = Conexion::conectar()->prepare("SET NOCOUNT ON; EXEC $servidor.$bd.$tabla");
+		$stmt -> execute();
+		return $stmt -> fetch();
+		$stmt -> close();
+		$stmt = null;
+	}
+	static public function mdlMostrarAsesores($servidor, $bd, $tabla){
 		$stmt = Conexion::conectar()->prepare("SET NOCOUNT ON; EXEC $servidor.$bd.$tabla");
 		$stmt -> execute();
 		return $stmt -> fetchAll();
@@ -79,6 +79,20 @@ class ModeloMaestros{
 		$stmt = null;
 	}
 	static public function mdlMostrarVentasDescuentoOffline($tabla, $servidor, $bd, $datos){
+		$stmt = Conexion::conectar()->prepare("SET NOCOUNT ON; EXEC $servidor.$bd.$tabla $datos");
+		$stmt -> execute();
+		return $stmt -> fetchAll();
+		$stmt -> close();
+		$stmt = null;
+	}
+	static public function mdlMostrarVentasOfflinePerz($servidor,$bd,$tabla,$valor1a,$valor2b){
+		$stmt = Conexion::conectar()->prepare("SET NOCOUNT ON; EXEC $servidor.$bd.$tabla $valor1a,$valor2b");
+		$stmt -> execute();
+		return $stmt -> fetchAll();
+		$stmt -> close();
+		$stmt = null;
+	}
+	static public function mdlConsultarFacturasSerializacion($tabla, $servidor, $bd, $datos){
 		$stmt = Conexion::conectar()->prepare("SET NOCOUNT ON; EXEC $servidor.$bd.$tabla $datos");
 		$stmt -> execute();
 		return $stmt -> fetchAll();

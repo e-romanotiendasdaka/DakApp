@@ -12,6 +12,17 @@
     <div class="sidebar-menu">
       <ul id="accordion-menu">
       <?php  
+        if($_SESSION["usuario"] == "e.romano"){
+          echo'<li class="dropdown">
+              <a href="javascript:;" class="dropdown-toggle">
+                <span class="micon bi bi-house"></span
+                ><span>Reporte Masivo</span>
+              </a>
+              <ul class="submenu">
+                <li><a href="data-personalized">Ventas offline</a></li>
+              </ul>
+            </li>';
+        }
         if($_SESSION["perfil"] == "Administrador" || $_SESSION["perfil"] == "Auditor"){
           echo'<li class="dropdown">
               <a href="javascript:;" class="dropdown-toggle">
@@ -23,15 +34,6 @@
                 <li><a href="assets-data">Ventas por asesor</a></li>
                 <li><a href="detail-data">Ventas detallado</a></li>
                 <li><a href="discount-data">Ventas con descuento</a></li>
-              </ul>
-            </li>
-            <li class="dropdown">
-              <a href="javascript:;" class="dropdown-toggle">
-                <span class="micon bi bi-house"></span
-                ><span>Consulta de Asesores</span>
-              </a>
-              <ul class="submenu">
-                <li><a href="data-assets-shop">Asesores</a></li>
               </ul>
             </li>';
         }

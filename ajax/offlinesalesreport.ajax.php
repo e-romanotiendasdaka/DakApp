@@ -1,7 +1,7 @@
 <?php
 require_once "../modelos/maestros.modelo.php";
 	$servidor = "[".$_POST["Servidor"]."]";
-	$bd = "ERP_POS_CENTRAL";
+	$bd = "[master]";
 	$fechaInicial = $_POST["fechaInicial"];
 	$fechaFinal = $_POST["fechaFinal"];
 	$horaI = date('00:00:00');
@@ -12,7 +12,7 @@ require_once "../modelos/maestros.modelo.php";
 	$valor2b = "'".$dateF."'";
 	$valor3c = "'".$_POST["caja"]."'";
 	$valor4d = "'".$_POST["operador"]."'";
-	$tabla = "[Venta].[spReportedeVentasOffline]";
+	$tabla = "[dbo].[VentaspReportedeVentasOffline]";
 	$datos = $valor1a.','.$valor2b.','.$valor3c.','.$valor4d;
 	$r = ModeloMaestros::mdlMostrarVentasOffline($tabla, $servidor, $bd, $datos);
 	foreach ($r as $key => $value) {

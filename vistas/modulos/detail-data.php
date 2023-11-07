@@ -86,7 +86,8 @@
         <div class="row">
         <div class="col-md-12 col-sm-12 text-right">
           <button type="button" class="btn btn-warning" onclick="buscarVentasDetallado()"><i class="nav-icon fa fa-search"></i> Buscar</button>
-          <button type="button" class="btn btn-secondary" onclick="limpiar()"><i class="fa-solid fa-broom"></i> Limpiar</button>
+          <a href="vistas/modulos/descargar-reporte.php?reporte=reporte"><button class="btn btn-success"><i class="fa fa-file-excel-o" aria-hidden="true"></i> Excel</button></a>
+          <button type="button" class="btn btn-secondary" onclick="limpiar()"><i class="fa fa-trash" aria-hidden="true"></i> Limpiar</button>
         </div>
       </div>
       </form>

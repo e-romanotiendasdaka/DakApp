@@ -610,8 +610,8 @@ function consultarFacturas(){
   var endDate = new Date(fechaFinal);
   var diffMs = Math.abs(endDate - startDate);
   var diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays > 30)  {
-    alert ("El rango de fechas supera un mes entre ellas!");
+  if (diffDays > 155)  {
+    alert ("El rango de fechas supera cince meses entre ellas!");
   } 
   else{
     progressBar.style.width = '5%';
@@ -726,5 +726,98 @@ function consultarAsesores(){
       }
       }
     })
+  }
+}
+function buscarVentasPersonalizado(){ 
+  const progressBar = document.querySelector('.progress-bar');
+  $('.progress-bar').fadeIn();
+  var fechaInicial = $("#fechaInicialP").val();
+  var fechaFinal = $("#fechaFinalP").val();
+  var startDate = new Date(fechaInicial);
+  var endDate = new Date(fechaFinal);
+  var diffMs = Math.abs(endDate - startDate);
+  var diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays > 30) {
+    alert ("El rango de fechas supera un mes entre ellas!");
+  }else{
+    progressBar.style.width = '5%';
+    $.ajax({
+    url:"ajax/offlinesalesreportperz.ajax.php",
+    method:"POST",
+    data: { "fechaInicial" : fechaInicial, 
+            "fechaFinal" : fechaFinal, 
+      cache: false,
+      dataType: "json"},
+    beforeSend: function () {
+            progressBar.style.width = '25%';
+        },
+    success:function(respuesta){
+      var table = $('.table-off').DataTable();
+      table.clear().draw();
+      var resp = jQuery.parseJSON(respuesta); 
+      var sumaPorFila = [];
+      var sumaPorFila2 = [];
+      var total = 0;
+      var total2 = 0;
+      for(var i = 0; i < resp.length; i++) {
+          var idsucursalsap = resp[i]["idsucursalsap"];
+          var Fecha = resp[i]["Fecha"];
+          var Caja = resp[i]["Caja"];
+          var Operador = resp[i]["Operador"];
+          var PrecioBruto = resp[i]["PrecioBruto"];
+          var desPrecioBruto = new Intl.NumberFormat('de-DE').format(parseFloat(PrecioBruto).toFixed(2));
+          var PrecioBrutoUSD = resp[i]["PrecioBrutoUSD"];
+          var desPrecioBrutoUSD = new Intl.NumberFormat('de-DE').format(parseFloat(PrecioBrutoUSD).toFixed(2));
+          var Monto_Descuentos = resp[i]["Monto_Descuentos"];
+          var desMonto_Descuentos = new Intl.NumberFormat('de-DE').format(parseFloat(Monto_Descuentos).toFixed(2));
+          var Monto_DescuentosUSD = resp[i]["Monto_DescuentosUSD"];
+          var desMonto_DescuentosUSD = new Intl.NumberFormat('de-DE').format(parseFloat(Monto_DescuentosUSD).toFixed(2));
+          var PrecioNeto = resp[i]["PrecioNeto"];
+          var desPrecioNeto = new Intl.NumberFormat('de-DE').format(parseFloat(PrecioNeto).toFixed(2));
+          var PrecioNetoUSD = resp[i]["PrecioNetoUSD"];
+          var desPrecioNetoUSD = new Intl.NumberFormat('de-DE').format(parseFloat(PrecioNetoUSD).toFixed(2));
+          var Monto_IVA = resp[i]["Monto_IVA"];
+          var desMonto_IVA = new Intl.NumberFormat('de-DE').format(parseFloat(Monto_IVA).toFixed(2));
+          var Monto_IVAUSD = resp[i]["Monto_IVAUSD"];
+          var desMonto_IVAUSD = new Intl.NumberFormat('de-DE').format(parseFloat(Monto_IVAUSD).toFixed(2));
+          var Monto_Total = resp[i]["Monto_Total"];
+          var desMonto_Total = new Intl.NumberFormat('de-DE').format(parseFloat(Monto_Total).toFixed(2));
+          var Monto_USD = resp[i]["Monto_USD"];
+          var desMonto_USD = new Intl.NumberFormat('de-DE').format(parseFloat(Monto_USD).toFixed(2));
+          table.row.add([idsucursalsap,Fecha,Caja,Operador,desPrecioBruto+' Bs',desPrecioBrutoUSD+' $',desMonto_Descuentos+' Bs',desMonto_DescuentosUSD+' $',desPrecioNeto+' Bs',desPrecioNetoUSD+' $',desMonto_IVA+' Bs',desMonto_IVAUSD+' $',desMonto_Total+' Bs',desMonto_USD+' $']);
+          sumaPorFila.push(Monto_USD);
+          sumaPorFila2.push(Monto_Total);
+          total += Monto_USD;
+          total2 += Monto_Total;
+        }
+      table.draw();
+      progressBar.style.width = '75%';
+      var column = table.column(12);
+      var sum = column.data().reduce(function(a,b) {
+          return parseFloat(a) + parseFloat(b);
+      }, 0);
+      var column2 = table.column(13);
+      var sum2 = column2.data().reduce(function(c,d) {
+          return parseFloat(c) + parseFloat(d);
+      }, 0);
+      var totalVta = new Intl.NumberFormat('de-DE').format(parseFloat(total2).toFixed(2));
+      var totalVtaUsd = new Intl.NumberFormat('de-DE').format(parseFloat(total).toFixed(2));
+      $('#totalVta').val(totalVta + ' Bs');
+      $('#totalVtaUsd').val(totalVtaUsd + ' $');
+      $('#totalnc').html(resp[0]['totalnc']);
+      $('#totalfacts').html(resp[0]['totalfacts']);
+      $('#totaloper').html(parseInt(resp[0]['totalfacts'])+parseInt(resp[0]['totalnc']));
+
+    },
+    complete: function () {
+      progressBar.style.width = '100%';
+      if (progressBar.style.width = '100%') {
+        setTimeout(function(){
+          $('.progress-bar').fadeOut();
+          progressBar.style.width = '0%';
+         }, 1500);
+      }
+    }
+  })
   }
 }

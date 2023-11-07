@@ -1,0 +1,38 @@
+USE [master]
+GO
+/****** Object:  StoredProcedure [dbo].[VentaspObtenerOperadorReporteVentaOffline]    Script Date: 02/11/2023 12:15:12 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Romano,Elvis>
+-- Create date: <2023-11-01>
+-- Description:	<Obtener Operadores de Cajas>
+-- =============================================
+CREATE OR ALTER PROCEDURE [dbo].[VentaspObtenerOperadorReporteVentaOffline]
+AS
+BEGIN
+	SET NOCOUNT ON;
+    DECLARE @TotalSalesLogs TABLE (IdRegistro INT IDENTITY(1,1),IdLogIntegracion INT,LData NVARCHAR(max))
+	DECLARE @OperatorsData TABLE (IdRegistro int identity(1,1),IdOperador int)
+	DECLARE @Facturas table(NumReg int IDENTITY(1, 1) NOT NULL,IdLogIntegracion bigint,Facturas nvarchar(MAX))
+	INSERT INTO @TotalSalesLogs
+	SELECT ls.IdLogIntegracion, ls.Data 
+	FROM POS_MDW.Integracion.LogIntegraciones ls WITH(NOLOCK) 
+	WHERE ls.IdTipoLog = 1 AND ls.IdCaja <> ISNULL((SELECT ISNULL(C.IdCaja, 0) FROM ERP_POS_CENTRAL.ConfiguracionPOS.Cajas C WITH(NOLOCK) WHERE C.SerialImpresora = 'CAJAKLK'), 0)
+	;WITH CteFacturas AS(
+		SELECT A.IdLogIntegracion,B.Facturas
+		FROM @TotalSalesLogs A
+		CROSS APPLY ( SELECT * FROM OPENJSON(LData) WITH (Facturas nvarchar(MAX) '$.Facturas' AS JSON)) B
+	)
+	INSERT INTO @OperatorsData([IdOperador])
+	SELECT B.IdUsuario
+	FROM CteFacturas A
+	CROSS APPLY ( SELECT * FROM OPENJSON(Facturas) WITH (IdUsuario bigint)) B
+
+	SELECT DISTINCT IdOperador,UPPER(e.Nombre) +' '+ UPPER(e.Apellido) as Operador FROM @OperatorsData od
+	INNER JOIN ERP.Seguridad.Usuarios us WITH(NOLOCK) ON od.IdOperador = us.IdUsuario
+	INNER JOIN ERP.Maestro.Entidades e WITH(NOLOCK) ON e.IdEntidad = us.IdEntidad
+	FOR JSON PATH
+END

@@ -1,0 +1,224 @@
+USE [master]
+GO
+
+/****** Object:  StoredProcedure [dbo].[SerializacionConsultarFacturas]    Script Date: 03/11/2023 13:25:43 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE OR ALTER PROCEDURE [dbo].[SerializacionConsultarFacturas] (@FechaInicio datetime,@FechaFin datetime,@estatusserializacion nvarchar(max))
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @FacturasData TABLE(NumReg int IDENTITY(1,1) NOT NULL,IdLogIntegracion bigint NOT NULL,Datos nvarchar(max) NOT NULL)
+;WITH cteFacturasData AS(
+	SELECT LI.IdLogIntegracion, LI.Data Datos
+	FROM POS_MDW.Integracion.LogIntegraciones LI WITH(NOLOCK)
+	WHERE LI.IdTipoLog = 1 AND LI.NumeroFactura > 0 
+	AND LI.IdCaja <> ISNULL((SELECT ISNULL(C.IdCaja, 0) FROM ERP_POS_CENTRAL.ConfiguracionPOS.Cajas C WITH(NOLOCK) WHERE C.SerialImpresora = 'CAJAKLK'),0)
+)
+INSERT INTO @FacturasData
+SELECT * FROM cteFacturasData
+
+DECLARE @Facturas table(NumReg int IDENTITY(1, 1) NOT NULL,IdLogIntegracion bigint,Facturas nvarchar(MAX))
+DECLARE @DetalleFacturas table(NumReg int IDENTITY(1, 1) NOT NULL,IdLogIntegracion bigint,DetalleFacturas nvarchar(MAX))
+DECLARE @DevolucionesFacturas table(NumReg int IDENTITY(1, 1) NOT NULL,IdLogIntegracion bigint,DevolucionesFacturas nvarchar(MAX))
+DECLARE @DevolucionesDetalles table(NumReg int IDENTITY(1, 1) NOT NULL,IdLogIntegracion bigint,DevolucionesDetalles nvarchar(MAX))
+
+DECLARE @FacturasT TABLE(NumReg int IDENTITY(1,1) NOT NULL,IdLogIntegracion bigint NULL,IdMovimiento bigint NULL,
+	CajaFactura varchar(10) NULL,IdEstatus bigint NULL,IdAfiliacion bigint NULL,IdSucursal int NULL,
+	Fecha datetime NULL,MontoTotal decimal(18, 8) NULL,IndTieneDevolucion bit NULL,IdMovimientoDevolucion bigint NULL,
+	CajaFacturaDevolucion varchar(10) NULL,IndDevolucionCompleta bit NULL)
+DECLARE @FacturasDetalleT TABLE(NumReg int IDENTITY(1,1) NOT NULL,IdDetalleFactura bigint NULL,IdLogIntegracion bigint NOT NULL,
+	IdMovimiento bigint NULL,IdSucursal int NULL,IdProducto bigint NULL,Serial varchar(300) NULL,IndManejaSerial bit NULL,
+	Entradas decimal(18, 4) NULL,Salidas decimal(18, 4) NULL)
+DECLARE @DevolucionesT TABLE(NumReg [int] IDENTITY(1,1) NOT NULL,IdLogIntegracion bigint NULL,IdDevolucionFactura bigint NULL,
+	IdSucursal int NULL,IdMovimiento bigint NULL,IdMovimientoOrigen bigint NULL,CajaFactura varchar(10) NULL,
+	CajaFacturaOrigen varchar(10) NULL,MontoTotal decimal(18, 8) NULL)
+DECLARE  @DevolucionesDetallesT TABLE (NumReg int IDENTITY(1,1) NOT NULL,IdLogIntegracion bigint NULL,IdDetalleFactura bigint NULL,
+	IdMovimiento bigint NULL,IdProducto bigint NULL,IdSucursal int NULL,Serial varchar(300) NULL,IndManejaSerial bit NULL,
+	Entradas decimal(18, 4) NULL,Salidas decimal(18, 4) NULL)
+
+;WITH CteFacturas AS(
+	SELECT A.IdLogIntegracion,B.Facturas
+	FROM @FacturasData A
+	CROSS APPLY ( SELECT * FROM OPENJSON(Datos) WITH (Facturas nvarchar(MAX) '$.Facturas' AS JSON)) B
+)
+INSERT INTO @Facturas
+SELECT * FROM CteFacturas
+INSERT INTO @FacturasT
+SELECT A.IdLogIntegracion,B.IdMovimiento,B.CajaFactura,B.IdEstatus,B.IdAfiliacion,B.IdSucursal,B.Fecha,B.MontoTotal,0 IndTieneDevolucion,-1 IdMovimientoDevolucion,'' CajaFacturaDevolucion,0 IndDevolucionCompleta 
+FROM @Facturas A
+CROSS APPLY ( SELECT * FROM OPENJSON(Facturas) WITH (IdMovimiento bigint,CajaFactura varchar(10),IdAfiliacion bigint,IdEstatus bigint,IdSucursal int,Fecha datetime,MontoTotal decimal(18, 8))) B WHERE B.IdEstatus <> 46 ORDER BY A.IdLogIntegracion
+
+;WITH DetalleFacturas AS(
+	SELECT A.IdLogIntegracion,B.DetalleFacturas
+	FROM @FacturasData A
+	CROSS APPLY ( SELECT * FROM OPENJSON(Datos) WITH (DetalleFacturas nvarchar(MAX) '$.DetalleFacturas' AS JSON)) B
+)
+INSERT INTO @DetalleFacturas
+SELECT * FROM DetalleFacturas
+INSERT INTO @FacturasDetalleT
+SELECT B.IdDetalle IdDetalleFactura,A.IdLogIntegracion,B.IdMovimiento,B.IdSucursal,B.IdProducto,B.Serial,1 IndManejaSerial,B.Entradas,B.Salidas 
+FROM @DetalleFacturas A
+CROSS APPLY ( SELECT * FROM OPENJSON(DetalleFacturas) WITH (IdDetalle bigint,IdMovimiento bigint,IdSucursal int,IdProducto bigint,Serial varchar(300),Entradas decimal(18, 4),Salidas decimal(18, 4))) B ORDER BY A.IdLogIntegracion
+
+;WITH DevolucionesFacturas AS(
+	SELECT A.IdLogIntegracion,B.DevolucionesFacturas
+	FROM @FacturasData A
+	CROSS APPLY ( SELECT * FROM OPENJSON(Datos) WITH (DevolucionesFacturas nvarchar(MAX) '$.DevolucionesFacturas' AS JSON)) B
+)
+INSERT INTO @DevolucionesFacturas
+SELECT * FROM DevolucionesFacturas
+INSERT INTO @DevolucionesT
+SELECT A.IdLogIntegracion,B.IdDevolucionFactura,B.IdSucursal,-1 IdMovimiento,-1 IdMovimientoOrigen,B.CajaFactura,B.CajaFacturaOrigen,0 Montototal 
+FROM @DevolucionesFacturas A
+CROSS APPLY ( SELECT * FROM OPENJSON(DevolucionesFacturas) WITH (IdDevolucionFactura bigint,IdSucursal int,CajaFactura varchar(10),CajaFacturaOrigen varchar(10))) B ORDER BY A.IdLogIntegracion
+
+;WITH DevolucionesDetalles AS(
+	SELECT A.IdLogIntegracion,B.DevolucionesDetalles
+	FROM @FacturasData A
+	CROSS APPLY ( SELECT * FROM OPENJSON(Datos) WITH (DevolucionesDetalles nvarchar(MAX) '$.DetalleFacturas' AS JSON)) B
+)
+INSERT INTO @DevolucionesDetalles
+SELECT * FROM DevolucionesDetalles
+INSERT INTO @DevolucionesDetallesT
+SELECT A.IdLogIntegracion,B.IdDetalle IdDetalleFactura,B.IdMovimiento,B.IdProducto,B.IdSucursal,B.Serial,0 IndManejaSerial,B.Entradas,B.Salidas
+FROM @DevolucionesDetalles A
+CROSS APPLY ( SELECT * FROM OPENJSON(DevolucionesDetalles) WITH (IdDetalle bigint,IdMovimiento bigint,IdProducto bigint,IdSucursal int,Serial varchar(300),Entradas decimal(18, 4),Salidas decimal(18, 4))) B ORDER BY A.IdLogIntegracion
+
+DECLARE @IdFactura bigint = -1,@IdCliente bigint = -1,@IdEstatus int = -1,@IdEstatusSerializacion int = -1,@IdProducto bigint = -1,
+		@CajaFactura varchar(10) = '',@Serial varchar(300) = '',@Valor varchar(300) = ''
+DECLARE @TransaccionalIndicadoresProducto TABLE(Id bigint NOT NULL,IdProducto bigint NOT NULL,IdNivelSensibilidad int NOT NULL,
+	IdUsuarioCrea int NOT NULL,IdUsuarioModifica int NOT NULL,IndFechaVencimiento bit NOT NULL,IndSolicitudAutomatica bit NOT NULL,
+	IndPrecioMarcado bit NOT NULL,IndManejaRecipe bit NOT NULL,IndDevolucion bit NOT NULL,IndRedondeo bit NOT NULL,
+	IndGuiaSada bit NOT NULL,IndRegulado bit NOT NULL,IndManejoLote bit NOT NULL,IndManejoSerial bit NOT NULL,
+	FechaCrea datetime NOT NULL,FechaModifica datetime NOT NULL)
+DECLARE @FacturaSerial TABLE(NumReg int IDENTITY(1,1) NOT NULL,IdFactura bigint NOT NULL,IdProducto bigint NOT NULL,
+	IdProductoSerial bigint NOT NULL,Serial varchar(300) NOT NULL)
+
+DECLARE @FacturasProductosSeriales TABLE(NumReg int IDENTITY(1,1) NOT NULL,IdMovimiento bigint NULL,
+CantidadProductosManejaSerial int NULL)
+
+UPDATE @FacturasDetalleT
+SET IndManejaSerial = ISNULL(IP.IndManejoSerial, 0)
+FROM @FacturasDetalleT FD LEFT JOIN @TransaccionalIndicadoresProducto IP ON IP.IdProducto = FD.IdProducto
+
+UPDATE @FacturasT
+SET	IndTieneDevolucion = IIF(D.IdDevolucionFactura IS NOT NULL, 1, 0),IdMovimientoDevolucion = F.IdMovimiento,CajaFacturaDevolucion = D.CajaFactura,
+	IndDevolucionCompleta = IIF((SELECT SUM(FD.Salidas) FROM @FacturasDetalleT FD WHERE FD.IdLogIntegracion = F.IdLogIntegracion) = (SELECT SUM(DD.Entradas) FROM @DevolucionesDetallesT DD WHERE DD.IdLogIntegracion = D.IdLogIntegracion), 1, 0)
+FROM @FacturasT F
+	LEFT JOIN @DevolucionesT D ON D.IdSucursal = F.IdSucursal AND D.CajaFacturaOrigen = F.CajaFactura
+WHERE D.IdLogIntegracion IS NOT NULL
+
+;WITH cteFacturasProductosSeriales AS (
+	SELECT FD.IdMovimiento IdMovimiento,SUM(CAST(FD.IndManejaSerial AS tinyint)) CantidadProductosManejaSerial
+	FROM @FacturasDetalleT FD
+	GROUP BY FD.IdMovimiento
+	HAVING SUM(CAST(FD.IndManejaSerial AS tinyint)) > 0
+)
+INSERT INTO @FacturasProductosSeriales
+SELECT * FROM cteFacturasProductosSeriales
+
+;WITH cteFacturaSerial AS (
+	SELECT DF.IdMovimiento IdFactura,DF.IdProducto,-1 IdProductoSerial,	DF.Serial
+	FROM @FacturasDetalleT DF
+	WHERE (DF.IdProducto = @IdProducto OR @IdProducto = -1)	AND DF.Serial = @Serial
+)
+INSERT INTO @FacturaSerial
+SELECT * FROM cteFacturaSerial
+
+DECLARE @ResultadosSerializacion TABLE(NumReg int IDENTITY(1,1) NOT NULL,IdLogIntegracion bigint NULL,
+	IdMovimiento bigint NULL,CajaFactura varchar(10) NULL,IdEstatusSerializacion int NULL,EstatusSerializacion varchar(max) NULL)
+
+;WITH cteResultados AS (
+	SELECT DISTINCT MAIN.IdLogIntegracion,MAIN.IdMovimiento,MAIN.CajaFactura,
+		IIF((SELECT SUM(IIF(DF.Serial <> '', 1, 0)) FROM @FacturasDetalleT DF WHERE	DF.IdLogIntegracion = MAIN.IdLogIntegracion) = (SELECT SUM(IIF(DF.IndManejaSerial = 1, 1, 0)) FROM @FacturasDetalleT DF WHERE	DF.IdLogIntegracion = MAIN.IdLogIntegracion) AND (MAIN.IndTieneDevolucion = 1) AND (MAIN.IndDevolucionCompleta = 1), 150, IIF((SELECT COUNT(*) FROM ERP_POS_CENTRAL.Serializacion.FacturasEstatus FES WITH(NOLOCK) WHERE FES.IdMovimiento = MAIN.IdMovimiento AND FES.CajaFActura = MAIN.CajaFactura) > 0, FE.IdEstatus, (SELECT IIF(SUM(IIF(DF.Serial <> '', 1, 0)) = SUM(IIF(DF.IndManejaSerial = 1, 1, 0)), 149, 147) FROM @FacturasDetalleT DF WHERE DF.IdLogIntegracion = MAIN.IdLogIntegracion))) IdEstatusSerializacion,
+		IIF((SELECT SUM(IIF(DF.Serial <> '', 1, 0)) FROM @FacturasDetalleT DF WHERE	DF.IdLogIntegracion = MAIN.IdLogIntegracion) = (SELECT SUM(IIF(DF.IndManejaSerial = 1, 1, 0)) FROM @FacturasDetalleT DF WHERE	DF.IdLogIntegracion = MAIN.IdLogIntegracion) AND (MAIN.IndTieneDevolucion = 1) AND (MAIN.IndDevolucionCompleta = 1), 'Devuelta', IIF((SELECT COUNT(*) FROM ERP_POS_CENTRAL.Serializacion.FacturasEstatus FES WITH(NOLOCK) WHERE FES.IdMovimiento = MAIN.IdMovimiento AND FES.CajaFActura = MAIN.CajaFactura) > 0, Es.Estatus, (SELECT IIF(SUM(IIF(DF.Serial <> '', 1, 0)) = SUM(IIF(DF.IndManejaSerial = 1, 1, 0)), 'Pendiente por despacho', 'Pendiente por serializar') FROM @FacturasDetalleT DF WHERE	DF.IdLogIntegracion = MAIN.IdLogIntegracion))) EstatusSerializacion
+	FROM
+		@FacturasT MAIN						
+		LEFT JOIN ERP.Maestro.Estatus E WITH(NOLOCK) ON E.IdEstatus = MAIN.IdEstatus
+		LEFT JOIN ERP.Maestro.Sucursales S WITH(NOLOCK) ON S.IdSucursal = MAIN.IdSucursal
+		LEFT JOIN ERP_CRM.Cliente.vwClientes C WITH(NOLOCK) ON C.IdAfiliacion = MAIN.IdAfiliacion
+		LEFT JOIN ERP_POS_CENTRAL.Serializacion.FacturasEstatus FE WITH(NOLOCK) ON FE.IdMovimiento = MAIN.IdMovimiento AND FE.CajaFactura = MAIN.CajaFactura
+		LEFT JOIN ERP.Maestro.Estatus Es WITH(NOLOCK) ON Es.IdEstatus = FE.IdEstatus						
+	WHERE
+		(MAIN.IdMovimiento = @IdFactura OR @IdFactura = -1)
+		AND ((MAIN.CajaFactura LIKE CONCAT('%', @CajaFactura, '%')) OR @CajaFactura = '')
+		AND (C.IdCliente = @IdCliente OR @IdCliente = -1)
+		AND (MAIN.IdEstatus = @IdEstatus OR @IdEstatus = -1)
+		AND
+		(
+			(CAST(MAIN.Fecha AS date) BETWEEN @FechaInicio AND @FechaFin) OR
+			(@FechaFin = '19000101' AND CAST(MAIN.Fecha AS date) >= @FechaInicio) OR
+			(@FechaInicio = '19000101' AND CAST(MAIN.Fecha AS date) <= @FechaFin) OR
+			(@FechaInicio = '19000101' AND @FechaFin = '19000101')
+		)
+		AND ((MAIN.IdMovimiento IN(SELECT IdFactura FROM @FacturaSerial) OR (@Serial = '' OR @IdProducto = -1)))
+		AND (MAIN.CajaFactura LIKE '%'+@Valor+'%' 
+			OR C.Nombre LIKE '%'+@Valor+'%' 
+			OR C.Apellido LIKE '%'+@Valor+'%' 
+			OR (CONCAT(C.Nombre, ' ', C.Apellido) LIKE '%'+@Valor+'%' 
+			OR C.NumeroDocumento LIKE '%'+@Valor+'%' 
+			OR @Valor = ''))
+	)
+	INSERT INTO @ResultadosSerializacion
+	SELECT * FROM cteResultados
+
+	DECLARE @DK_FactSerial table(Sucursal nvarchar(40),Fecha datetime,CajaFactura nvarchar(15),Estatus nvarchar(15),MontoTotal decimal(18, 4),EstatusSerializacion nvarchar(40),
+	IndTieneDevolucion int,IndDevolucionCompleta int,Referencia nvarchar(40),Nombre nvarchar(max))
+	IF @estatusserializacion = 'Todas'
+	BEGIN
+		;WITH DKFactSerialVL AS (
+			SELECT DISTINCT ISNULL(S.Sucursal, '') Sucursal,MAIN.Fecha,MAIN.CajaFactura,ISNULL(E.Estatus, '') Estatus,MAIN.MontoTotal,R.EstatusSerializacion,MAIN.IndTieneDevolucion,MAIN.IndDevolucionCompleta,
+			P.Referencia,P.Nombre
+			FROM @FacturasT MAIN
+				INNER JOIN @FacturasDetalleT FD ON FD.IdLogIntegracion = MAIN.IdLogIntegracion
+				INNER JOIN ERP_MPC.Transaccional.Productos P ON P.IdProducto = FD.IdProducto
+				LEFT JOIN ERP.Maestro.Estatus E WITH(NOLOCK) ON E.IdEstatus = MAIN.IdEstatus
+				LEFT JOIN ERP.Maestro.Sucursales S WITH(NOLOCK) ON S.IdSucursal = MAIN.IdSucursal
+				LEFT JOIN ERP_CRM.Cliente.vwClientes C WITH(NOLOCK) ON C.IdAfiliacion = MAIN.IdAfiliacion
+				LEFT JOIN ERP_POS_CENTRAL.Serializacion.FacturasEstatus FE WITH(NOLOCK) ON FE.IdMovimiento = MAIN.IdMovimiento AND FE.IdSucursal = MAIN.IdSucursal AND FE.CajaFactura = MAIN.CajaFactura AND FE.IdEstatus <> 148
+				LEFT JOIN ERP.Maestro.Estatus Es WITH(NOLOCK) ON Es.IdEstatus = FE.IdEstatus
+				INNER JOIN @ResultadosSerializacion R ON R.IdLogIntegracion = MAIN.IdLogIntegracion AND (R.IdEstatusSerializacion = @IdEstatusSerializacion OR @IdEstatusSerializacion = -1)
+			WHERE (MAIN.IdMovimiento = @IdFactura OR @IdFactura = -1) AND ((MAIN.CajaFactura LIKE CONCAT('%', @CajaFactura, '%')) OR @CajaFactura = '')
+				AND (C.IdCliente = @IdCliente OR @IdCliente = -1) AND (MAIN.IdEstatus = @IdEstatus OR @IdEstatus = -1)
+				AND ((CAST(MAIN.Fecha AS date) BETWEEN @FechaInicio AND @FechaFin) OR (@FechaFin = '19000101' AND CAST(MAIN.Fecha AS date) >= @FechaInicio) OR
+					(@FechaInicio = '19000101' AND CAST(MAIN.Fecha AS date) <= @FechaFin) OR (@FechaInicio = '19000101' AND @FechaFin = '19000101'))
+				AND ((MAIN.IdMovimiento IN(SELECT IdFactura FROM @FacturaSerial) OR (@Serial = '' OR @IdProducto = -1))) AND (MAIN.CajaFactura LIKE CONCAT('%', @Valor,'%')
+				OR C.Nombre LIKE CONCAT('%', @Valor,'%') OR C.Apellido LIKE CONCAT('%', @Valor,'%')	OR (CONCAT(C.Nombre, ' ', C.Apellido) LIKE CONCAT('%', @Valor,'%')
+				OR C.NumeroDocumento LIKE CONCAT('%', @Valor,'%') OR @Valor = '')) AND MAIN.MontoTotal >= 0
+		)
+		SELECT * FROM DKFactSerialVL ORDER BY Fecha DESC
+	END
+	ELSE 
+	BEGIN
+		;WITH DKFactSerialVL AS (
+			SELECT DISTINCT ISNULL(S.Sucursal, '') Sucursal,MAIN.Fecha,MAIN.CajaFactura,ISNULL(E.Estatus, '') Estatus,MAIN.MontoTotal,R.EstatusSerializacion,MAIN.IndTieneDevolucion,MAIN.IndDevolucionCompleta,
+			P.Referencia,P.Nombre
+			FROM @FacturasT MAIN
+				INNER JOIN @FacturasDetalleT FD ON FD.IdLogIntegracion = MAIN.IdLogIntegracion
+				INNER JOIN ERP_MPC.Transaccional.Productos P ON P.IdProducto = FD.IdProducto
+				LEFT JOIN ERP.Maestro.Estatus E WITH(NOLOCK) ON E.IdEstatus = MAIN.IdEstatus
+				LEFT JOIN ERP.Maestro.Sucursales S WITH(NOLOCK) ON S.IdSucursal = MAIN.IdSucursal
+				LEFT JOIN ERP_CRM.Cliente.vwClientes C WITH(NOLOCK) ON C.IdAfiliacion = MAIN.IdAfiliacion
+				LEFT JOIN ERP_POS_CENTRAL.Serializacion.FacturasEstatus FE WITH(NOLOCK) ON FE.IdMovimiento = MAIN.IdMovimiento AND FE.IdSucursal = MAIN.IdSucursal AND FE.CajaFactura = MAIN.CajaFactura AND FE.IdEstatus <> 148
+				LEFT JOIN ERP.Maestro.Estatus Es WITH(NOLOCK) ON Es.IdEstatus = FE.IdEstatus
+				INNER JOIN @ResultadosSerializacion R ON R.IdLogIntegracion = MAIN.IdLogIntegracion AND (R.IdEstatusSerializacion = @IdEstatusSerializacion OR @IdEstatusSerializacion = -1)
+			WHERE (MAIN.IdMovimiento = @IdFactura OR @IdFactura = -1) AND ((MAIN.CajaFactura LIKE CONCAT('%', @CajaFactura, '%')) OR @CajaFactura = '')
+				AND (C.IdCliente = @IdCliente OR @IdCliente = -1) AND (MAIN.IdEstatus = @IdEstatus OR @IdEstatus = -1)
+				AND ((CAST(MAIN.Fecha AS date) BETWEEN @FechaInicio AND @FechaFin) OR (@FechaFin = '19000101' AND CAST(MAIN.Fecha AS date) >= @FechaInicio) OR
+					(@FechaInicio = '19000101' AND CAST(MAIN.Fecha AS date) <= @FechaFin) OR (@FechaInicio = '19000101' AND @FechaFin = '19000101'))
+				AND ((MAIN.IdMovimiento IN(SELECT IdFactura FROM @FacturaSerial) OR (@Serial = '' OR @IdProducto = -1))) AND (MAIN.CajaFactura LIKE CONCAT('%', @Valor,'%')
+				OR C.Nombre LIKE CONCAT('%', @Valor,'%') OR C.Apellido LIKE CONCAT('%', @Valor,'%')	OR (CONCAT(C.Nombre, ' ', C.Apellido) LIKE CONCAT('%', @Valor,'%')
+				OR C.NumeroDocumento LIKE CONCAT('%', @Valor,'%') OR @Valor = '')) AND MAIN.MontoTotal >= 0
+		)
+		SELECT * FROM DKFactSerialVL WHERE EstatusSerializacion = @estatusserializacion ORDER BY Fecha DESC
+	END
+END
+GO
+
+
